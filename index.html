@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Synthesis | Heart in Chaos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500&family=JetBrains+Mono&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Space Grotesk', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 320px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .sidebar-content {
+            margin: auto 0;
+        }
+
+        .formula-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .formula-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.2);
+            transition: all 0.6s ease;
+            position: relative;
+            padding-left: 1rem;
+            border-left: 1px solid transparent;
+        }
+
+        .formula-item.active {
+            color: #ff6482;
+            border-left: 2px solid #ff6482;
+            transform: translateX(10px);
+            opacity: 1;
+        }
+
+        .formula-item.completed {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .ui-layer {
+            position: absolute;
+            bottom: 10%;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        button {
+            pointer-events: auto;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.75rem 2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        button:hover:not(:disabled) {
+            background: white;
+            color: black;
+            border-color: white;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .message {
+            position: absolute;
+            bottom: 20%;
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            opacity: 0;
+            transition: opacity 2s ease;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 0 2rem;
+        }
+
+        .reveal .message {
+            opacity: 1;
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .objective-section {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .objective-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .objective-desc {
+            font-size: 0.7rem;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 1.5rem;
+        }
+
+        .objective-preview {
+            width: 100%;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .objective-preview svg {
+            width: 60px;
+            height: 60px;
+            fill: rgba(255, 100, 130, 0.2);
+            transition: all 1s ease;
+        }
+
+        .reveal .objective-preview svg {
+            fill: rgba(255, 100, 130, 0.8);
+            filter: drop-shadow(0 0 8px rgba(255, 100, 130, 0.5));
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar">
+        <div class="sidebar-content">
+            <span class="tag">Sequence Logs</span>
+            <div class="formula-list" id="formula-list">
+                <div class="formula-item active" id="f0">
+                    f(x,y) = sin(xy) + cos(x² - y²)
+                </div>
+                <div class="formula-item" id="f1">
+                    r = 2 - 2sin(θ) + sin(θ)√|cos(θ)| / (sin(θ) + 1.4)
+                </div>
+                <div class="formula-item" id="f2">
+                    x = 16sin³(t), y = 13cos(t) - 5cos(2t) - 2cos(3t)
+                </div>
+                <div class="formula-item" id="f3">
+                    (x² + y² - 1)³ - x²y³ = 0
+                </div>
+            </div>
+
+            <div class="objective-section">
+                <span class="tag">System Target</span>
+                <h3 class="objective-title">Structural Convergence</h3>
+                <p class="objective-desc">
+                    Reorganizing chaotic variables to reveal the underlying geometric intent. Mapping X/Y axes to stabilize center.
+                </p>
+                <div class="objective-preview">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div id="canvas-container">
+        <canvas id="mathCanvas"></canvas>
+        
+        <div class="ui-layer" id="ui">
+            <button id="step-btn" onclick="nextEquation()">Run Analysis</button>
+        </div>
+
+        <div class="message italic" id="final-message">
+            “The chaos was only a lack of resolution. <br> Every step closer to you reveals the intended shape.”
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mathCanvas');
+        const ctx = canvas.getContext('2d');
+        const btn = document.getElementById('step-btn');
+        const container = document.getElementById('canvas-container');
+        
+        let width, height;
+        let particles = [];
+        const particleCount = 2800;
+        let currentStep = 0;
+        
+        const equations = [
+            { chaos: 1.0, axisAlpha: 0.05 },
+            { chaos: 0.6, axisAlpha: 0.1 },
+            { chaos: 0.2, axisAlpha: 0.2 },
+            { chaos: 0.0, axisAlpha: 0.4 }
+        ];
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.targetX = this.x;
+                this.targetY = this.y;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.color = `rgba(255, 255, 255, ${Math.random() * 0.4 + 0.1})`;
+            }
+
+            update() {
+                const chaosLevel = equations[currentStep].chaos;
+                
+                if (chaosLevel > 0) {
+                    this.x += this.vx * chaosLevel + Math.sin(Date.now() * 0.001 + this.y * 0.01) * 0.1;
+                    this.y += this.vy * chaosLevel + Math.cos(Date.now() * 0.001 + this.x * 0.01) * 0.1;
+                }
+
+                const lerpSpeed = 0.03 + (1 - chaosLevel) * 0.05;
+                this.x += (this.targetX - this.x) * lerpSpeed;
+                this.y += (this.targetY - this.y) * lerpSpeed;
+
+                if (chaosLevel > 0.8) {
+                    if (this.x < 0) this.x = width; if (this.x > width) this.x = 0;
+                    if (this.y < 0) this.y = height; if (this.y > height) this.y = 0;
+                }
+            }
+
+            draw() {
+                const progress = currentStep / (equations.length - 1);
+                const r = Math.floor(255 * (1 - progress) + 255 * progress);
+                const g = Math.floor(255 * (1 - progress) + 100 * progress);
+                const b = Math.floor(255 * (1 - progress) + 130 * progress);
+                
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.4 + progress * 0.4})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawAxes() {
+            const alpha = equations[currentStep].axisAlpha;
+            const centerX = width / 2;
+            const centerY = height / 2.2;
+            
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            
+            // X-Axis
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            
+            // Y-Axis
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, height);
+            ctx.stroke();
+
+            // Axis Labels
+            ctx.setLineDash([]);
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 2})`;
+            ctx.fillText('X-AXIS', width - 50, centerY - 10);
+            ctx.fillText('Y-AXIS', centerX + 10, 20);
+            
+            // Origin Marker
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function getHeartPoint(t, step) {
+            const progress = step / (equations.length - 1);
+            const hx = 16 * Math.pow(Math.sin(t), 3);
+            const hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+            
+            const noiseScale = (1 - progress) * 300;
+            const nx = (Math.random() - 0.5) * noiseScale;
+            const ny = (Math.random() - 0.5) * noiseScale;
+
+            const scale = Math.min(width, height) * 0.014;
+            
+            return {
+                x: (hx * scale + width / 2) + nx,
+                y: (hy * scale + height / 2.2) + ny
+            };
+        }
+
+        function nextEquation() {
+            if (currentStep < equations.length - 1) {
+                document.getElementById(`f${currentStep}`).classList.remove('active');
+                document.getElementById(`f${currentStep}`).classList.add('completed');
+                
+                currentStep++;
+                
+                document.getElementById(`f${currentStep}`).classList.add('active');
+                
+                recalculateTargets();
+                
+                if (currentStep === equations.length - 1) {
+                    btn.disabled = true;
+                    btn.innerText = "System Converged";
+                    container.classList.add('reveal');
+                }
+            }
+        }
+
+        function recalculateTargets() {
+            particles.forEach((p, i) => {
+                const t = (i / particleCount) * Math.PI * 2;
+                const point = getHeartPoint(t, currentStep);
+                p.targetX = point.x;
+                p.targetY = point.y;
+            });
+        }
+
+        function init() {
+            width = canvas.parentElement.clientWidth;
+            height = canvas.parentElement.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+            recalculateTargets();
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            drawAxes();
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        animate();
+    </script>
+</body>
+</html>
